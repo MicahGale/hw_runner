@@ -5,7 +5,7 @@ authors = [
 	{name = "Micah Gale", email = "mdgale@wisc.edu"}
 ]
 license = {text = "MIT License"}
-dependencies = []
+dependencies = ["pyyaml"]
 
 [build-system]
 build-backend = 'setuptools.build_meta'
