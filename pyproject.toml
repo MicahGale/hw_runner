@@ -1,0 +1,14 @@
+[project]
+name = "hw_runner"
+version = "0.0.1"
+authors = [ 
+	{name = "Micah Gale", email = "mdgale@wisc.edu"}
+]
+license = {text = "MIT License"}
+dependencies = []
+
+[build-system]
+build-backend = 'setuptools.build_meta'
+requires = [
+	'setuptools',
+]
