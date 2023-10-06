@@ -26,3 +26,31 @@ class Runner:
             )
         # TODO verify there's a callable
 
+    def parse_yaml(self):
+        with open(self.in_path, "r") as fh:
+            raw_data = yaml.safe_load(fh)
+        ret = self.convert_tree_values(raw_data)
+        return ret
+
+    @classmethod
+    def convert_tree_values(cls, tree):
+        ret = {}
+        # found leaf
+        if "q" in tree and "u" in tree:
+            quantity = float(tree["q"]) * cls._ureg(tree["u"])
+            ret["quantity"] = quantity
+            for key, value in tree.items():
+                if key not in {"q", "u"}:
+                    ret[key] = value
+        else:
+            for key, node in tree.items():
+                if isinstance(node, dict):
+                    ret[key] = cls.convert_tree_values(node)
+                else:
+                    ret[key] = node
+        return ret
+
+    def run(self):
+        self.verify_existance()
+        data = self.parse_yaml()
+        print(data)
