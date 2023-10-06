@@ -24,3 +24,6 @@ def parse_arguments(course_name):
 
 def main(course_name):
     arguments = parse_arguments(course_name)
+    if arguments.assignment != "all":
+        runner = Runner(int(arguments.assignment))
+        runner.run()
