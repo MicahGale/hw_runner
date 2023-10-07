@@ -9,9 +9,11 @@ class Runner:
     BASE_OUTPUT_DIR = "out_data"
     _ureg = pint.UnitRegistry()
 
-    def __init__(self, homework_number):
+    def __init__(self, homework_number, callables):
         assert isinstance(homework_number, int)
+        assert isinstance(callables, dict)
         self._number = homework_number
+        self._callers = callables
 
     @property
     def in_path(self):
@@ -22,9 +24,10 @@ class Runner:
     def verify_existance(self):
         if not os.path.isfile(self.in_path):
             raise FileNotFoundError(
-                f"Input yaml for homework {self.homework_number}: {self.get_in_path} does not exist"
+                f"Input yaml for homework {self._number}: {self.get_in_path} does not exist"
             )
-        # TODO verify there's a callable
+        if self._number not in self._callers:
+            raise ValueError(f"A callable for homework {self._number} was not provided.")
 
     def parse_yaml(self):
         with open(self.in_path, "r") as fh:
