@@ -43,4 +43,8 @@ def main(course_name, runner_dict):
     arguments = parse_arguments(course_name)
     if arguments.assignment != "all":
         runner = Runner(int(arguments.assignment), runner_dict)
-        runner.run()
+        runner.run(arguments.question)
+    else:
+        for hw in runner_dict:
+            runner = Runner(hw, runner_dict)
+            runner.run("all")
