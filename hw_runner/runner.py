@@ -1,11 +1,13 @@
 import os
 import pint
+import re
 import yaml
 
 
 class Runner:
     BASE_INPUT_DIR = "in_data"
     BASE_PREFIX = "hw"
+    QUESTION_PREFIX = "question"
     BASE_OUTPUT_DIR = "out_data"
     _ureg = pint.UnitRegistry()
 
@@ -55,10 +57,59 @@ class Runner:
                     ret[key] = node
         return ret
 
-    def run(self):
+    @property
+    def __get_question(self):
+        if isinstance(self._runner, dict):
+            return lambda key: self._runner[key]
+        return lambda key: getattr(self._runner, key)
+
+    @property
+    def __get_keys(self):
+        if isinstance(self._runner, dict):
+            return self._runner.keys()
+        return dir(self._runner)
+
+    def run(self, question):
         self.verify_existance()
         data = self.parse_yaml()
         self._data = data
         self._runner = self._callers[self._number](
-            **{k: v["quantity"] for k, v in self._data["global_data"].items()}
+            self._ureg,
+            **{k: v["quantity"] for k, v in self._data["global_data"].items()},
         )
+        if question == "all":
+            question_finder = re.compile(
+                f"{self.BASE_PREFIX}_{self._number}_{self.QUESTION_PREFIX}_(.+)"
+            )
+            for attr in self.__get_keys:
+                if match := question_finder.match(attr):
+                    quest = match.group(1)
+                    self.run_question(quest)
+        else:
+            self.run_question(question)
+
+    def run_question(self, question):
+        try:
+            caller = self.__get_question(
+                f"{self.BASE_PREFIX}_{self._number}_{self.QUESTION_PREFIX}_{question}",
+            )
+        except (AttributeError, KeyError) as e:
+            raise AttributeError(
+                f"A callable for homework {self._number} question {question} was not provided."
+            )
+        try:
+            cleaned_input = {
+                k: v
+                for k, v in self._data[f"{self.QUESTION_PREFIX}_{question}"].items()
+                if k != "output"
+            }
+            cleaned_input = {k: v["quantity"] for k, v in cleaned_input.items()}
+            output = caller(**cleaned_input)
+            self.handle_outputs(question, output)
+        except KeyError as e:
+            raise KeyError(
+                f"Input Data not provided for homework {self._number} question {question}."
+            )
+
+    def handle_outputs(self, question, output):
+        pass
