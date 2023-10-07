@@ -27,7 +27,9 @@ class Runner:
                 f"Input yaml for homework {self._number}: {self.get_in_path} does not exist"
             )
         if self._number not in self._callers:
-            raise ValueError(f"A callable for homework {self._number} was not provided.")
+            raise ValueError(
+                f"A callable for homework {self._number} was not provided."
+            )
 
     def parse_yaml(self):
         with open(self.in_path, "r") as fh:
@@ -56,4 +58,7 @@ class Runner:
     def run(self):
         self.verify_existance()
         data = self.parse_yaml()
-        print(data)
+        self._data = data
+        self._runner = self._callers[self._number](
+            **{k: v["quantity"] for k, v in self._data["global_data"].items()}
+        )

@@ -25,7 +25,7 @@ def parse_arguments(course_name):
 def main(course_name, runner_dict):
     """
     The main executable function.
-    
+
     This will handle the command line arguments,
     and then execute the necessary callables.
     The command line accepts a homework, and a qeustion argument.
@@ -34,7 +34,7 @@ def main(course_name, runner_dict):
     the global_data dictionary from the YAML file. This must return an object
     that has each question's callable as an attribute, or a dictionary
     with each question as a callable.
-    
+
     :param course_name: the name of the course that will show up in the command line.
     :type course_name: str
     :param runner_dict: a dictionary of callables with the key being an int for the homework number.
