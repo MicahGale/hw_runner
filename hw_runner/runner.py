@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import os
 import pint
 import re
@@ -88,6 +89,9 @@ class Runner:
         else:
             self.run_question(question)
 
+    def _get_question_data(self, question):
+        return self._data[f"{self.QUESTION_PREFIX}_{question}"]
+
     def run_question(self, question):
         try:
             caller = self.__get_question(
@@ -100,12 +104,18 @@ class Runner:
         try:
             cleaned_input = {
                 k: v
-                for k, v in self._data[f"{self.QUESTION_PREFIX}_{question}"].items()
+                for k, v in self._get_question_data(question).items()
                 if k != "output"
             }
             cleaned_input = {k: v["quantity"] for k, v in cleaned_input.items()}
-            output = caller(**cleaned_input)
-            self.handle_outputs(question, output)
+            if "graph" in self._get_question_data(question)["output"]:
+                fig = plt.figure(figsize=(16, 9))
+                ax = fig.subplots()
+                output = caller(**cleaned_input, ax=ax, fig=fig)
+                self.handle_outputs(question, output)
+            else:
+                output = caller(**cleaned_input)
+                self.handle_outputs(question, output)
         except KeyError as e:
             raise KeyError(
                 f"Input Data not provided for homework {self._number} question {question}."
