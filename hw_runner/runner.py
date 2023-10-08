@@ -1,8 +1,11 @@
+import matplotlib
 import matplotlib.pyplot as plt
 import os
 import pint
 import re
 import yaml
+
+matplotlib.rc("font", **{"weight": "bold", "size": 16})
 
 
 class Runner:
@@ -11,6 +14,7 @@ class Runner:
     QUESTION_PREFIX = "question"
     BASE_OUTPUT_DIR = "out_data"
     _ureg = pint.UnitRegistry()
+    _ureg.setup_matplotlib()
 
     def __init__(self, homework_number, callables):
         assert isinstance(homework_number, int)
@@ -112,7 +116,7 @@ class Runner:
                 fig = plt.figure(figsize=(16, 9))
                 ax = fig.subplots()
                 output = caller(**cleaned_input, ax=ax, fig=fig)
-                self.handle_outputs(question, output)
+                self.handle_outputs(question, output, ax, fig)
             else:
                 output = caller(**cleaned_input)
                 self.handle_outputs(question, output)
@@ -121,5 +125,29 @@ class Runner:
                 f"Input Data not provided for homework {self._number} question {question}."
             )
 
-    def handle_outputs(self, question, output):
-        pass
+    @property
+    def output_dir(self):
+        path_name = os.path.join(
+            self.BASE_OUTPUT_DIR, f"{self.BASE_PREFIX}_{self._number}"
+        )
+        if not os.path.isdir(path_name):
+            os.makedirs(path_name)
+        return path_name
+
+    def get_output_figure(self, question):
+        graph_data = self._get_question_data(question)["output"]["graph"]
+        return (os.path.join(self.output_dir, graph_data["name"]), graph_data)
+
+    def handle_outputs(self, question, output, ax=None, fig=None):
+        if fig:
+            fig_path, graph_data = self.get_output_figure(question)
+            for name, caller in {
+                "x_label": ax.set_xlabel,
+                "y_label": ax.set_ylabel,
+                "title": ax.set_title,
+            }.items():
+                if name in graph_data:
+                    caller(graph_data[name])
+            for extension in graph_data["ext"]:
+                fig.savefig(f"{fig_path}.{extension}")
+            fig.clear()
