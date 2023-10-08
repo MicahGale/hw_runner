@@ -1,3 +1,4 @@
+import copy
 import matplotlib
 import matplotlib.pyplot as plt
 import os
@@ -142,8 +143,23 @@ class Runner:
         graph_data = self._get_question_data(question)["output"]["graph"]
         return (os.path.join(self.output_dir, graph_data["name"]), graph_data)
 
+    def get_output_yaml_path(self):
+        return os.path.join(self.output_dir, f"{self.BASE_PREFIX}_{self._number}.yaml")
+
+    def get_output_yaml(self, question):
+        path = self.get_output_yaml_path()
+        if os.path.isfile(path):
+            with open(path, "r") as fh:
+                out_data = yaml.safe_load(fh)
+        else:
+            out_data = copy.deepcopy(self._data)
+        self._out_data = out_data
+        return out_data[f"{self.QUESTION_PREFIX}_{question}"]
+
     def handle_outputs(self, question, output, ax=None, fig=None):
         if fig:
+            # TODO handle multiple figures
+            # TODO handle labeling subplots
             fig_path, graph_data = self.get_output_figure(question)
             for name, caller in {
                 "x_label": ax.set_xlabel,
@@ -155,3 +171,36 @@ class Runner:
             for extension in graph_data["ext"]:
                 fig.savefig(f"{fig_path}.{extension}")
             fig.clear()
+        self.output_yaml(question, output)
+        self.output_tex(question, output)
+
+    def output_yaml(self, question, output):
+        quest_in_data = self._get_question_data(question)
+        quest_out_data = self.get_output_yaml(question)
+        for out_field in quest_in_data["output"]:
+            if out_field != "graph" and out_field not in output:
+                raise ValueError(
+                    f"Output for field {out_field} not provided for Homework {self._number} question {question}"
+                )
+        protected_attributes = {"graph"}
+        ret = {}
+        for out_field, in_attributes in quest_in_data["output"].items():
+            if out_field in protected_attributes:
+                continue
+            buff = self.convert_pint_quant_to_yaml(output[out_field])
+            for field, value in quest_in_data["output"][out_field].items():
+                buff[field] = value
+            ret[out_field] = buff
+        quest_out_data["results"] = ret
+        with open(self.get_output_yaml_path(), "w") as fh:
+            yaml.dump(self._out_data, fh)
+
+    def output_tex(self, question, output):
+        pass
+
+    @staticmethod
+    def convert_pint_quant_to_yaml(quantity):
+        quantity = quantity.to_reduced_units()
+        q, _ = quantity.to_tuple()
+        u = str(quantity.units)
+        return {"q": float(q), "u": u}
