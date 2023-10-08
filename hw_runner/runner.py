@@ -48,8 +48,12 @@ class Runner:
     def convert_tree_values(cls, tree):
         ret = {}
         # found leaf
-        if "q" in tree and "u" in tree:
-            quantity = float(tree["q"]) * cls._ureg(tree["u"])
+        if "q" in tree:
+            if "u" in tree:
+                unit_str = tree["u"]
+            else:
+                unit_str = ""
+            quantity = float(tree["q"]) * cls._ureg(unit_str)
             ret["quantity"] = quantity
             for key, value in tree.items():
                 if key not in {"q", "u"}:
