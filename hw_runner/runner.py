@@ -42,6 +42,7 @@ class Runner:
     def parse_yaml(self):
         with open(self.in_path, "r") as fh:
             raw_data = yaml.safe_load(fh)
+        self._raw_data = raw_data
         ret = self.convert_tree_values(raw_data)
         return ret
 
@@ -152,7 +153,7 @@ class Runner:
             with open(path, "r") as fh:
                 out_data = yaml.safe_load(fh)
         else:
-            out_data = copy.deepcopy(self._data)
+            out_data = copy.deepcopy(self._raw_data)
         self._out_data = out_data
         return out_data[f"{self.QUESTION_PREFIX}_{question}"]
 
@@ -196,7 +197,53 @@ class Runner:
             yaml.dump(self._out_data, fh)
 
     def output_tex(self, question, output):
-        pass
+        quest_in_data = self._get_question_data(question)
+        self.output_variables_to_tex(self._raw_data["global_data"], "global_input")
+        self.output_variables_to_tex(
+            self._raw_data[f"{self.QUESTION_PREFIX}_{question}"],
+            f"{self.QUESTION_PREFIX}_{question}_input",
+        )
+        self.output_variables_to_tex(
+            self._out_data[f"{self.QUESTION_PREFIX}_{question}"]["results"],
+            f"{self.QUESTION_PREFIX}_{question}_results",
+        )
+
+    def output_variables_to_tex(self, variables, command_name):
+        items = []
+        protected_attributes = {"graph"}
+        for var_name, data in variables.items():
+            if var_name in protected_attributes or "q" not in data:
+                continue
+            if "u" in data:
+                unit = self._ureg(data["u"]).units
+            else:
+                unit = self._ureg("").units
+            if "format" in data:
+                formatter = data["format"]
+            else:
+                formatter = "g"
+            siunitx = self.convert_quant_to_siunitx(data["q"], unit, formatter)
+            if "latex" in data:
+                pretty_print = data["latex"]
+            else:
+                pretty_print = var_name
+            items.append(f"\\item  ${pretty_print} = {siunitx}$")
+        out_path = os.path.join(self.output_dir, f"{command_name}.tex")
+        nl = "\n"
+        with open(out_path, "w") as fh:
+            fh.writelines(
+                f"""\\newcommand{{\\{command_name}}}{{
+\\begin{{itemize}}
+{nl.join(items)}
+\\end{{itemize}}
+}}
+"""
+            )
+
+    def convert_quant_to_siunitx(self, q, unit, formatter):
+        unit_str = f"{unit:~}"
+        unit_str = unit_str.replace(" / ", r"\per").replace(" ** ", "^")
+        return f"\\qty{{{q:{formatter}}}}{{{unit_str}}}"
 
     @staticmethod
     def convert_pint_quant_to_yaml(quantity):
