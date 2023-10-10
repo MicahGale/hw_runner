@@ -148,14 +148,17 @@ class Runner:
         return os.path.join(self.output_dir, f"{self.BASE_PREFIX}_{self._number}.yaml")
 
     def get_output_yaml(self, question):
+        key = f"{self.QUESTION_PREFIX}_{question}"
         path = self.get_output_yaml_path()
         if os.path.isfile(path):
             with open(path, "r") as fh:
                 out_data = yaml.safe_load(fh)
+            if key not in out_data:
+                out_data[key] = copy.deepcopy(self._raw_data[key])
         else:
             out_data = copy.deepcopy(self._raw_data)
         self._out_data = out_data
-        return out_data[f"{self.QUESTION_PREFIX}_{question}"]
+        return out_data[key]
 
     def handle_outputs(self, question, output, ax=None, fig=None):
         if fig:
