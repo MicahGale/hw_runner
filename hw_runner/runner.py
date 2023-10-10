@@ -242,7 +242,7 @@ class Runner:
 
     def convert_quant_to_siunitx(self, q, unit, formatter):
         unit_str = f"{unit:~}"
-        unit_str = unit_str.replace(" / ", r"\per").replace(" ** ", "^")
+        unit_str = unit_str.replace(" /", r"\per").replace(" ** ", "^")
         return f"\\qty{{{q:{formatter}}}}{{{unit_str}}}"
 
     @staticmethod
