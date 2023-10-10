@@ -117,19 +117,19 @@ class Runner:
                 for k, v in self._get_question_data(question).items()
                 if k != "output"
             }
-            cleaned_input = {k: v["quantity"] for k, v in cleaned_input.items()}
-            if "graph" in self._get_question_data(question)["output"]:
-                fig = plt.figure(figsize=(16, 9))
-                ax = fig.subplots()
-                output = caller(**cleaned_input, ax=ax, fig=fig)
-                self.handle_outputs(question, output, ax, fig)
-            else:
-                output = caller(**cleaned_input)
-                self.handle_outputs(question, output)
         except KeyError as e:
             raise KeyError(
                 f"Input Data not provided for homework {self._number} question {question}."
             )
+        cleaned_input = {k: v["quantity"] for k, v in cleaned_input.items()}
+        if "graph" in self._get_question_data(question)["output"]:
+            fig = plt.figure(figsize=(16, 9))
+            ax = fig.subplots()
+            output = caller(**cleaned_input, ax=ax, fig=fig)
+            self.handle_outputs(question, output, ax, fig)
+        else:
+            output = caller(**cleaned_input)
+            self.handle_outputs(question, output)
 
     @property
     def output_dir(self):
