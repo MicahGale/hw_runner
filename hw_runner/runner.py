@@ -201,17 +201,34 @@ class Runner:
 
     def output_tex(self, question, output):
         quest_in_data = self._get_question_data(question)
-        self.output_variables_to_tex(self._raw_data["global_data"], "global_input")
+        self.output_variables_to_tex(self._raw_data["global_data"], "globalInput")
         self.output_variables_to_tex(
             self._raw_data[f"{self.QUESTION_PREFIX}_{question}"],
-            f"{self.QUESTION_PREFIX}_{question}_input",
+            f"{self.QUESTION_PREFIX}{question}input",
         )
-        self.output_variables_to_tex(
-            self._out_data[f"{self.QUESTION_PREFIX}_{question}"]["results"],
-            f"{self.QUESTION_PREFIX}_{question}_results",
-        )
+        if len(self._out_data[f"{self.QUESTION_PREFIX}_{question}"]["results"]) > 0:
+            self.output_variables_to_tex(
+                self._out_data[f"{self.QUESTION_PREFIX}_{question}"]["results"],
+                f"{self.QUESTION_PREFIX}{question}results",
+            )
 
     def output_variables_to_tex(self, variables, command_name):
+        def convertNumToWords(num_string):
+            names = {
+                "1": "One",
+                "2": "Two",
+                "3": "Three",
+                "4": "Four",
+                "5": "Five",
+                "6": "Six",
+                "7": "Seven",
+                "8": "Eight",
+                "9": "Nine",
+                "0": "Zero",
+                ".": "dot",
+            }
+            return "".join([names[c] for c in num_string])
+
         items = []
         protected_attributes = {"graph"}
         for var_name, data in variables.items():
@@ -233,6 +250,12 @@ class Runner:
             items.append(f"\\item  ${pretty_print} = {siunitx}$")
         out_path = os.path.join(self.output_dir, f"{command_name}.tex")
         nl = "\n"
+        # make latex happy with numbers in commands
+        num_match = re.search(r"[\d\.]+", command_name)
+        if num_match:
+            command_name = re.sub(
+                r"[\d\.]+", convertNumToWords(num_match.group(0)), command_name
+            )
         with open(out_path, "w") as fh:
             fh.writelines(
                 f"""\\newcommand{{\\{command_name}}}{{
