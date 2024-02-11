@@ -339,9 +339,14 @@ class Runner:
         for out_field, in_attributes in quest_in_data["output"].items():
             if out_field in protected_attributes:
                 continue
-            buff = self.convert_pint_quant_to_yaml(output[out_field])
-            for field, value in quest_in_data["output"][out_field].items():
-                buff[field] = value
+            if isinstance(output[out_field],pint.Quantity): 
+                buff = self.convert_pint_quant_to_yaml(output[out_field])
+            else:
+                buff = output[out_field]
+            if isinstance(quest_in_data["output"][out_field], dict):
+                for field, value in quest_in_data["output"][out_field].items():
+                        buff[field] = value
+
             ret[out_field] = buff
         quest_out_data["results"] = ret
         with open(self.get_output_yaml_path(), "w") as fh:
