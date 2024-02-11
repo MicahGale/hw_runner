@@ -1,6 +1,6 @@
 [project]
 name = "hw_runner"
-version = "0.0.2"
+version = "0.0.3"
 authors = [ 
 	{name = "Micah Gale", email = "mdgale@wisc.edu"}
 ]
