@@ -65,7 +65,7 @@ class Runner:
         """
         if not os.path.isfile(self.in_path):
             raise FileNotFoundError(
-                f"Input yaml for homework {self._number}: {self.get_in_path} does not exist"
+                f"Input yaml for homework {self._number}: {self.in_path} does not exist"
             )
         if self._number not in self._callers:
             raise ValueError(
@@ -142,6 +142,7 @@ class Runner:
 
         The question function will then be called with all data provided in the input yaml file
         in the appropriate keys: ``f"question_{question}"`` as keyword arguments.
+        The first argument will be a Pint ureg.
         The function must return a dictionary with keys that are "output" section for the question.
         These data will then stored to the output yaml and LaTeX file.
         If a graph is going to be created a ``fig`` and ``ax`` variable will be provided by matplotlib.
@@ -158,7 +159,10 @@ class Runner:
         self._data = data
         self._runner = self._callers[self._number](
             self._ureg,
-            **{k: v["quantity"] for k, v in self._data["global_data"].items()},
+            **{
+                k: v["quantity"] if "quantity" in v else v
+                for k, v in self._data["global_data"].items()
+            },
         )
         if question == "all":
             question_finder = re.compile(
@@ -201,7 +205,9 @@ class Runner:
             raise KeyError(
                 f"Input Data not provided for homework {self._number} question {question}."
             )
-        cleaned_input = {k: v["quantity"] for k, v in cleaned_input.items()}
+        cleaned_input = {
+            k: v["quantity"] if "quantity" in v else v for k, v in cleaned_input.items()
+        }
         if "graph" in self._get_question_data(question)["output"]:
             fig = plt.figure(figsize=(16, 9))
             ax = fig.subplots()

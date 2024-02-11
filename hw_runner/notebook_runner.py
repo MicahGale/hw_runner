@@ -7,10 +7,15 @@ except ImportError as e:
     raise ImportError("HW_runner was not installed with notebook option") from e
 
 
-def notebook_runner(in_path, out_path, notebooks):
+def notebook_runner(_ureg, in_path, out_path, notebooks):
     """
     Creates callables to work with hw_runner that executes a jupyter notebook.
 
+    :param _ureg: a unit registry. Ignored
+    :param in_path: the folder containing the original notebooks.
+    :type in_path: str
+    :param out_path: the folder to move the notebooks to before executing
+    :type out_path: str
     :param notebooks: a dictionary mapping a question to a notebook file.
     :type notebooks: dict
     """
@@ -25,8 +30,8 @@ def notebook_runner(in_path, out_path, notebooks):
                 os.mkdir(out_path)
             shutil.copyfile(in_note, out_note)
 
-        def closure(params):
-            papermill.execute_notebook(out_note, parameters=params)
+        def closure(**params):
+            papermill.execute_notebook(out_note, out_note, parameters=params)
 
         return closure
 
