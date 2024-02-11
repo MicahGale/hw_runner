@@ -10,10 +10,31 @@ matplotlib.rc("font", **{"weight": "bold", "size": 16})
 
 
 class Runner:
+    """
+    A runner that will control the execution of a single assignment.
+
+    :param homework_number: the assignment number this runner is tied to.
+    :type homework_number: int
+    :param callables: a dictionary of callables with the key being an int for the homework number.
+    :type callables: dict
+    """
+
     BASE_INPUT_DIR = "in_data"
+    """
+    The folder in which the input yaml files are kept
+    """
     BASE_PREFIX = "hw"
+    """
+    The prefix to the file. e.g., hw_1.yaml
+    """
     QUESTION_PREFIX = "question"
+    """
+    Prefix used in question key in the yaml dictionary
+    """
     BASE_OUTPUT_DIR = "out_data"
+    """
+    The output folder to save the outputs to.
+    """
     _ureg = pint.UnitRegistry()
     _ureg.setup_matplotlib()
 
@@ -25,11 +46,23 @@ class Runner:
 
     @property
     def in_path(self):
+        """
+        The path to the input yaml file.
+
+        This does not check if there is actually a file here, just tells you where to look.
+        :rtype: str
+        """
         return os.path.join(
             self.BASE_INPUT_DIR, f"{self.BASE_PREFIX}_{self._number}.yaml"
         )
 
     def verify_existance(self):
+        """
+        Verifies that the input yaml file, and the callable was provided.
+
+        :raises FileNotFounderError: if the YAML file for :func:`runner.in_path` does not exist.
+        :raises ValueError: if the callable for this assignment is not provided.
+        """
         if not os.path.isfile(self.in_path):
             raise FileNotFoundError(
                 f"Input yaml for homework {self._number}: {self.get_in_path} does not exist"
@@ -40,6 +73,12 @@ class Runner:
             )
 
     def parse_yaml(self):
+        """
+        Open and parse the YAML file.
+
+        :returns: the parsed yaml tree.
+        :rtype: dict
+        """
         with open(self.in_path, "r") as fh:
             raw_data = yaml.safe_load(fh)
         self._raw_data = raw_data
@@ -48,6 +87,14 @@ class Runner:
 
     @classmethod
     def convert_tree_values(cls, tree):
+        """
+        Parses the leaves as unit quantities.
+
+        This uses Pint, and converts the leaves of the tree to a Quantity.
+
+        :returns: the new tree with leaves as quantities.
+        :rtype: dict
+        """
         ret = {}
         # found leaf
         if "q" in tree:
@@ -81,6 +128,31 @@ class Runner:
         return dir(self._runner)
 
     def run(self, question):
+        """
+        Runs the specified question.
+
+        If the question is "all", all questions that could be found will be ran.
+
+        The callable needs to be either a function or class.
+        This will first be initialized by passing all data in ``"global_data"`` as keyword arguments
+        to this callable.
+        The callable must either return a dictionary of question functions,
+        or be an object with the question functions as methods.
+        The dictionary key or function name must match: ``f"question_{question}"``.
+
+        The question function will then be called with all data provided in the input yaml file
+        in the appropriate keys: ``f"question_{question}"`` as keyword arguments.
+        The function must return a dictionary with keys that are "output" section for the question.
+        These data will then stored to the output yaml and LaTeX file.
+        If a graph is going to be created a ``fig`` and ``ax`` variable will be provided by matplotlib.
+        Plot your graph on this, and no further action is required.
+        Labels and title can be automatically added.
+
+        :param question: the question to run.
+        :type question: str
+        :returns: None
+        :raises AttributeError: If the question function was not provided.
+        """
         self.verify_existance()
         data = self.parse_yaml()
         self._data = data
@@ -100,9 +172,17 @@ class Runner:
             self.run_question(question)
 
     def _get_question_data(self, question):
+        """
+        Get all input data for the specified question.
+        """
         return self._data[f"{self.QUESTION_PREFIX}_{question}"]
 
     def run_question(self, question):
+        """
+        Run the specified question.
+
+        This should not be ran directly.
+        """
         try:
             caller = self.__get_question(
                 f"{self.BASE_PREFIX}_{self._number}_{self.QUESTION_PREFIX}_{question}",
@@ -133,6 +213,14 @@ class Runner:
 
     @property
     def output_dir(self):
+        """
+        Returns the path to store outputs into.
+
+        This will be out_data/hw_#.
+        If this folder doesn't exist, it will be created.
+
+        :rtype: str
+        """
         path_name = os.path.join(
             self.BASE_OUTPUT_DIR, f"{self.BASE_PREFIX}_{self._number}"
         )
@@ -141,13 +229,29 @@ class Runner:
         return path_name
 
     def get_output_figure(self, question):
+        """
+        Gets the specification for where to save a figure, and how.
+
+        :returns: A tuple of 1: the path to figure, and 2: the options the user specified.
+        :rtype: tuple
+        """
         graph_data = self._get_question_data(question)["output"]["graph"]
         return (os.path.join(self.output_dir, graph_data["name"]), graph_data)
 
     def get_output_yaml_path(self):
+        """
+        Get the output yaml file path to write to.
+        """
         return os.path.join(self.output_dir, f"{self.BASE_PREFIX}_{self._number}.yaml")
 
     def get_output_yaml(self, question):
+        """
+        Get the existing data in the output yaml file if it exists.
+
+        If the output doesn't exist yet, the input data will be provided.
+
+        :rtype: dict
+        """
         key = f"{self.QUESTION_PREFIX}_{question}"
         path = self.get_output_yaml_path()
         if os.path.isfile(path):
@@ -161,6 +265,18 @@ class Runner:
         return out_data[key]
 
     def handle_outputs(self, question, output, ax=None, fig=None):
+        """
+        Handles the output from a question.
+
+        :param question: the question to handle.
+        :type question: str
+        :param output: the output from question executing
+        :type output: dict
+        :param ax: The axis object from pyplot if any
+        :type ax: matplotlib.axes
+        :param fig: the figure object from pyplot.
+        :type fig: matplotlib.Figure
+        """
         if fig:
             # TODO handle multiple figures
             # TODO handle labeling subplots
@@ -179,6 +295,14 @@ class Runner:
         self.output_tex(question, output)
 
     def output_yaml(self, question, output):
+        """
+        Save the output data to the output yaml file
+
+        :param question: the question.
+        :type question: str
+        :param output: the outputs from the function
+        :type output: dict
+        """
         quest_in_data = self._get_question_data(question)
         quest_out_data = self.get_output_yaml(question)
         for out_field in quest_in_data["output"]:
@@ -186,7 +310,7 @@ class Runner:
                 raise ValueError(
                     f"Output for field {out_field} not provided for Homework {self._number} question {question}"
                 )
-        protected_attributes = {"graph"}
+        protected_attributes = {"graph", "options"}
         ret = {}
         for out_field, in_attributes in quest_in_data["output"].items():
             if out_field in protected_attributes:
@@ -200,6 +324,14 @@ class Runner:
             yaml.dump(self._out_data, fh)
 
     def output_tex(self, question, output):
+        """
+        Creates the inputs and outputs as latex files that can be included and displayed prettily.
+
+        :param question: the question.
+        :type question: str
+        :param output: the outputs from the function
+        :type output: dict
+        """
         quest_in_data = self._get_question_data(question)
         self.output_variables_to_tex(self._raw_data["global_data"], "globalInput")
         self.output_variables_to_tex(
@@ -213,6 +345,11 @@ class Runner:
             )
 
     def output_variables_to_tex(self, variables, command_name):
+        """
+        Converts a specific variable to latex.
+
+        """
+
         def convertNumToWords(num_string):
             names = {
                 "1": "One",
@@ -267,6 +404,9 @@ class Runner:
             )
 
     def convert_quant_to_siunitx(self, q, unit, formatter):
+        """
+        Converts Pint units to being printable by Siunitx
+        """
         unit_str = f"{unit:~}"
         unit_str = unit_str.replace(" /", r"\per").replace(" ** ", "^")
         return f"\\qty{{{q:{formatter}}}}{{{unit_str}}}"
