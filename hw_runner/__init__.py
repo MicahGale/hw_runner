@@ -1,6 +1,7 @@
 import argparse
 
 from .runner import Runner
+from .notebook_runner import notebook_runner
 
 
 def parse_arguments(course_name):

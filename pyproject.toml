@@ -1,11 +1,17 @@
 [project]
 name = "hw_runner"
-version = "0.0.1"
+version = "0.0.2"
 authors = [ 
 	{name = "Micah Gale", email = "mdgale@wisc.edu"}
 ]
 license = {text = "MIT License"}
 dependencies = ["matplotlib", "pint","pyyaml"]
+
+[project.optional-dependencies]
+notebook = [
+	"jupyterlab",
+	"papermill"
+]
 
 [build-system]
 build-backend = 'setuptools.build_meta'
