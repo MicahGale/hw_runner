@@ -106,4 +106,3 @@ question_1:
        latex: E_{\gamma}
        format: .2f
 ```
-```
