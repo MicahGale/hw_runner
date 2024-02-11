@@ -175,6 +175,24 @@ class Runner:
         else:
             self.run_question(question)
 
+    def load(self, question, rerun=False):
+        """
+        Loads the output data if it exists, otherwise runs the question and stores, then provides it.
+
+        :param question: the question to run. "All" is not allowed.
+        :type question: str
+        :param rerun: whether or not to rerun the question no matter what.
+        :type rerun: bool
+        :returns: None
+        :raises AttributeError: If the question function was not provided.
+        """
+        self.verify_existance()
+        output = self.get_output_yaml(question)
+        if rerun or "results" not in output:
+            self.run(question)
+            output = self.get_output_yaml(question)
+        return output["results"]
+
     def _get_question_data(self, question):
         """
         Get all input data for the specified question.
