@@ -7,7 +7,7 @@ except ImportError as e:
     raise ImportError("HW_runner was not installed with notebook option") from e
 
 
-def notebook_runner(_ureg, in_path, out_path, notebooks):
+def notebook_runner(_ureg, in_path, exec_path, out_path, notebooks):
     """
     Creates callables to work with hw_runner that executes a jupyter notebook.
 
@@ -22,16 +22,18 @@ def notebook_runner(_ureg, in_path, out_path, notebooks):
 
     def create_closure(notebook):
         in_note = os.path.join(in_path, notebook)
+        exec_note = os.path.join(exec_path, notebook)
         out_note = os.path.join(out_path, notebook)
         if not os.path.exists(in_note):
             raise FileNotFoundError(f"Missing notebook at {in_path}")
-        if not os.path.exists(out_note):
-            if not os.path.exists(out_path):
-                os.mkdir(out_path)
-            shutil.copyfile(in_note, out_note)
+        if not os.path.exists(exec_note):
+            if not os.path.exists(exec_path):
+                os.mkdir(exec_path)
+            shutil.copyfile(in_note, exec_note)
 
         def closure(**params):
-            papermill.execute_notebook(out_note, out_note, parameters=params)
+            papermill.execute_notebook(exec_note, exec_note, parameters=params)
+            shutil.move(exec_note, out_note)
 
         return closure
 
